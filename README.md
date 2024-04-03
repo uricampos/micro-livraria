@@ -1,10 +1,10 @@
 # Micro-Livraria: Exemplo Prático de Microsserviços
 
-Este repositório contem um exemplo simples de uma livraria virtual construída usando uma **arquitetura de microsserviços**.
+Este repositório contém um exemplo simples de uma livraria virtual construída usando uma **arquitetura de microsserviços**. Esse repositório tem como base o exemplo do livro **Engenharia de Software Moderna** de Marco Tulio Valente, disponível em https://engsoftmoderna.info/.
 
-O exemplo foi projetado para ser usado em uma **aula prática sobre microsserviços**, que pode, por exemplo, ser realizada após o estudo do [Capítulo 7](https://engsoftmoderna.info/cap7.html) do livro [Engenharia de Software Moderna](https://engsoftmoderna.info).
+O exemplo foi projetado para ser usado em uma **aula prática sobre microsserviços**, que pode, por exemplo, ser realizada após o estudo sobre Projeto de Arquitetura.
 
-O objetivo da aula é permitir que o aluno tenha um primeiro contato com microsserviços e com tecnologias normalmente usadas nesse tipo de arquitetura, tais como **Node.js**, **REST**, **gRPC** e **Docker**.
+O objetivo do exemplo é permitir que o aluno tenha um primeiro contato com microsserviços e com tecnologias normalmente usadas nesse tipo de arquitetura, tais como **Node.js**, **REST** e **gRPC**.
 
 Como nosso objetivo é didático, na livraria virtual estão à venda apenas três livros, conforme pode ser visto na próxima figura, que mostra a interface Web do sistema. Além disso, a operação de compra apenas simula a ação do usuário, não efetuando mudanças no estoque. Assim, os clientes da livraria podem realizar apenas duas operações: (1) listar os produtos à venda; (2) calcular o frete de envio.
 
@@ -16,9 +16,7 @@ No restante deste documento vamos:
 
 -   Descrever o sistema, com foco na sua arquitetura.
 -   Apresentar instruções para sua execução local, usando o código disponibilizado no repositório.
--   Descrever duas tarefas práticas para serem realizadas pelos alunos, as quais envolvem:
-    -   Tarefa Prática #1: Implementação de uma nova operação em um dos microsserviços
-    -   Tarefa Prática #2: Criação de containers Docker para facilitar a execução dos microsserviços.
+-   Descrever a tarefa prática para ser realizada pelos alunos, que envolve a implementação de uma nova operação em um dos microsserviços.
 
 ## Arquitetura
 
@@ -232,136 +230,9 @@ git commit -m "Tarefa prática #1 - Microservices"
 git push origin main
 ```
 
-## Tarefa Prática #2: Criando um Container Docker
-
-Nesta segunda tarefa, você irá criar um container Docker para o seu microserviço. Os containers são importantes para isolar e distribuir os microserviços em ambientes de produção. Em outras palavras, uma vez "copiado" para um container, um microsserviço pode ser executado em qualquer ambiente, seja ele sua máquina local, o servidor de sua universidade, ou um sistema de cloud (como Amazon AWS, Google Cloud, etc).
-
-Como nosso primeiro objetivo é didático, iremos criar apenas uma imagem Docker para exemplificar o uso de containers.
-
-Caso você não tenha o Docker instaldo em sua máquina, é preciso instalá-lo antes de iniciar a tarefa. Um passo-a-passo de instalação pode ser encontrado na [documentação oficial](https://docs.docker.com/get-docker/).
-
-#### Passo 1
-
-Crie um arquivo na raiz do projeto com o nome `shipping.Dockerfile`. Este arquivo armazenará as instruções para criação de uma imagem Docker para o serviço `Shipping`.
-
-Como ilustrado na próxima figura, o Dockerfile é utilizado para gerar uma imagem. A partir dessa imagem, você pode criar várias instâncias de uma aplicação. Com isso, conseguimos escalar o microsserviço de `Shipping` de forma horizontal.
-
-<p align="center">
-    <img width="70%" src="https://user-images.githubusercontent.com/7620947/108651385-67ccda80-74a0-11eb-9390-80df6ea6fd8c.png" />
-</p>
-
-No Dockerfile, você precisa incluir cinco instruções
-
--   `FROM`: tecnologia que será a base de criação da imagem.
--   `WORKDIR`: diretório da imagem na qual os comandos serão executados.
--   `COPY`: comando para copiar o código fonte para a imagem.
--   `RUN`: comando para instalação de dependências.
--   `CMD`: comando para executar o seu código quando o container for criado.
-
-Ou seja, nosso Dockerfile terá as seguintes linhas:
-
-```Dockerfile
-# Imagem base derivada do Node
-FROM node
-
-# Diretório de trabalho
-WORKDIR /app
-
-# Comando para copiar os arquivos para a pasta /app da imagem
-COPY . /app
-
-# Comando para instalar as dependências
-RUN npm install
-
-# Comando para inicializar (executar) a aplicação
-CMD ["node", "/app/services/shipping/index.js"]
-```
-
-#### Passo 2
-
-Agora nós vamos compilar o Dockerfile e criar a imagem. Para isto, execute o seguinte comando em um terminal do seu sistema operacional (esse comando precisa ser executado na raiz do projeto; ele pode também demorar um pouco mais para ser executado).
-
-```
-docker build -t micro-livraria/shipping -f shipping.Dockerfile ./
-```
-
-onde:
-
--   `docker build`: comando de compilação do Docker.
--   `-t micro-livraria/shipping`: tag de identificação da imagem criada.
--   `-f shipping.Dockerfile`: dockerfile a ser compilado.
-
-O `./` no final indica que estamos executando os comandos do Dockerfile tendo como referência a raiz do projeto.
-
-#### Passo 3
-
-Antes de iniciar o serviço via container Docker, precisamos remover a inicialização do serviço de Shipping do comando `npm run start`. Para isso, basta remover o sub-comando `start-shipping` localizado na linha 7 do arquivo [package.json](https://github.com/aserg-ufmg/micro-livraria/blob/main/package.json), conforme mostrado no próximo diff (a linha com o símbolo "-" no início representa a linha original do arquivo; a linha com o símbolo "+" representa como essa linha deve ficar após a sua alteração):
-
-```diff
-diff --git a/package.json b/package.json
-index 25ff65c..552a04e 100644
---- a/package.json
-+++ b/package.json
-@@ -4,7 +4,7 @@
-     "description": "Toy example of microservice",
-     "main": "",
-     "scripts": {
--        "start": "run-p start-frontend start-controller start-shipping start-inventory",
-+        "start": "run-p start-frontend start-controller start-inventory",
-         "start-controller": "nodemon services/controller/index.js",
-         "start-shipping": "nodemon services/shipping/index.js",
-         "start-inventory": "nodemon services/inventory/index.js",
-
-```
-
-Em seguida, você precisa parar o comando antigo (basta usar um CTRL-C no terminal) e rodar o comando `npm run start` para efetuar as mudanças.
-
-Por fim, para executar a imagem criada no passo anterior (ou seja, colocar de novo o microsserviço de `Shipping` no ar), basta usar o comando:
-
-```
-docker run -ti --name shipping -p 3001:3001 micro-livraria/shipping
-```
-
-onde:
-
--   `docker run`: comando de execução de uma imagem docker.
--   `-ti`: habilita a interação com o container via terminal.
--   `--name shipping`: define o nome do container criado.
--   `-p 3001:3001`: redireciona a porta 3001 do container para sua máquina.
--   `micro-livraria/shipping`: especifica qual a imagem deve-se executar.
-
-Se tudo estiver correto, você irá receber a seguinte mensagem em seu terminal:
-
-```
-Shipping Service running
-```
-
-E o Controller pode acessar o serviço diretamente através do container Docker.
-
-**Mas qual foi exatamente a vantagem de criar esse container?** Agora, você pode levá-lo para qualquer máquina ou sistema operacional e colocar o microsserviço para rodar sem instalar mais nada (incluindo bibliotecas, dependências externas, módulos de runtime, etc). Isso vai ocorrer com containers implementados em JavaScript, como no nosso exemplo, mas também com containers implementados em qualquer outra linguagem.
-
-**IMPORTANTE**: Se tudo funcionou corretamente, dê um **COMMIT & PUSH** (e certifique-se de que seu repositório no GitHub foi atualizado; isso é fundamental para seu trabalho ser devidamente corrigido).
-
-```bash
-git add --all
-git commit -m "Tarefa prática #2 - Docker"
-git push origin main
-```
-
-## Comentários Finais
-
-Nesta aula, trabalhamos em uma aplicação baseada em microsserviços. Apesar de pequena, ela ilustra os princípios básicos de microsserviços, bem como algumas tecnologias importantes quando se implementa esse tipo de arquitetura.
-
-No entanto, é importante ressaltar que em uma aplicação real existem outros componentes, como bancos de dados, balanceadores de carga e orquestradores.
-
-A função de um **balanceador de carga** é dividir as requisições quando temos mais de uma instância do mesmo microsserviço. Imagine que o microsserviço de frete da loja virtual ficou sobrecarregado e, então, tivemos que colocar para rodar múltiplas instâncias do mesmo. Nesse caso, precisamos de um balanceador para dividir as requisições que chegam entre essas instâncias.
-
-Já um **orquestrador** gerencia o ciclo de vida de containers. Por exemplo, se um servidor para de funcionar, ele automaticamente move os seus containers para um outro servidor. Se o número de acessos ao sistema aumenta bruscamente, um orquestrador também aumenta, em seguida, o número de containers. [Kubernetes](https://kubernetes.io/) é um dos orquestradores mais usados atualmente.
-
-Se quiser estudar um segundo sistema de demonstração de microsserviços, sugerimos este [repositório](https://github.com/GoogleCloudPlatform/microservices-demo), mantido pelo serviço de nuvem do Google.
 
 ## Créditos
 
 Este exercício prático, incluindo o seu código, foi elaborado por **Rodrigo Brito**, aluno de mestrado do DCC/UFMG, como parte das suas atividades na disciplina Estágio em Docência, cursada em 2020/2, sob orientação do **Prof. Marco Tulio Valente**.
 
-O código deste repositório possui uma licença MIT. O roteiro descrito acima possui uma licença CC-BY.
+O código deste repositório possui uma [licença MIT](https://opensource.org/license/mit). O roteiro descrito acima possui uma licença [CC-BY](https://creativecommons.org/licenses/by/4.0/).
