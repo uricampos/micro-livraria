@@ -52,8 +52,26 @@ function calculateShipping(id, cep) {
         });
 }
 
+function searchProductByID(id) {
+    const booksContainer = document.querySelector('.books'); 
+
+    fetch(`http://localhost:3000/product/${id}`).then((res) => {
+        if (!res) {
+            throw new Error('Livro não encontrado');
+        }
+        return res.json();
+    }).then((book) => {
+        booksContainer.innerHTML = '';
+        booksContainer.appendChild(newBook(book));
+    }).catch((err) => {
+        swal('Erro', 'Livro não encontrado', 'error');
+        console.error(err);
+    })
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const books = document.querySelector('.books');
+    const searchInput = document.querySelector('#search');
 
     fetch('http://localhost:3000/products')
         .then((data) => {
@@ -86,5 +104,36 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch((err) => {
             swal('Erro', 'Erro ao listar os produtos', 'error');
             console.error(err);
+        });
+
+        searchInput.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                const bookId = searchInput.value.trim();
+                if (bookId) {
+                    searchProductByID(bookId);
+                } else if (bookId === '') {
+                    books.innerHTML = '';
+                    fetch('http://localhost:3000/products')
+                        .then((data) => {
+                            if (data.ok) {
+                                return data.json();
+                            }
+                            throw data.statusText;
+                        })
+                        .then((data) => {
+                            if (data) {
+                                data.forEach((book) => {
+                                    books.appendChild(newBook(book));
+                                });
+                            }
+                        })
+                        .catch((err) => {
+                            swal('Erro', 'Erro ao listar os produtos', 'error');
+                            console.error(err);
+                        });
+                } else {
+                    swal('Erro', 'Livro nao encontrado', 'error');
+                }
+            }
         });
 });
